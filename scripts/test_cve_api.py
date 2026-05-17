@@ -260,7 +260,7 @@ async def _run_test(client: Client, tc: TestCase) -> tuple[str, bool, str, float
         data = json.loads(result.content[0].text)
         total = data["total_results"]
         returned = len(data["vulnerabilities"])
-        first_id = data["vulnerabilities"][0]["cve"]["id"] if returned > 0 else "—"
+        first_id = data["vulnerabilities"][0]["id"] if returned > 0 else "—"
 
         if tc.expect_results and total == 0:
             return tc.name, False, "Expected results but got 0", elapsed
@@ -282,10 +282,7 @@ async def main() -> None:
     print(f"{'=' * 62}")
     print(f"{total} test cases  |  running in parallel")
     print(f"{'=' * 62}\n")
-
-    # Limit to 5 concurrent requests — stays within the unauthenticated rate
-    # limit (5 req/30s) and well within the authenticated limit (50 req/30s).
-    sem = asyncio.Semaphore(5)
+    sem = asyncio.Semaphore(10)
 
     async with Client(mcp) as client:
         coros = [run_test(client, tc, sem) for tc in TEST_CASES]
@@ -295,8 +292,9 @@ async def main() -> None:
             name, ok, detail, elapsed = await coro
             completed += 1
             status = "PASS" if ok else "FAIL"
-            print(f"[{completed:02}/{total}] {status}  {name}")
-            print(f"         {detail}  ({elapsed:.2f}s)")
+            print(f"[{completed:02}/{total}] {status}  {name}  ({elapsed:.2f}s)")
+            if not ok:
+                print(f"         ERROR: {detail}")
 
             if ok:
                 passed += 1
