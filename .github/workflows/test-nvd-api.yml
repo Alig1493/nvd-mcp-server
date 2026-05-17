@@ -73,7 +73,7 @@ jobs:
         run: docker compose logs nvd-mcp-server
 
       - name: Run HTTP connection test
-        run: uv run src/scripts/test_sse_connection.py
+        run: uv run src/scripts/test_http_connection.py
 
       - name: Dump logs on failure
         if: failure()
