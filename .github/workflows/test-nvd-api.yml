@@ -56,16 +56,25 @@ jobs:
 
       - name: Wait for server to be healthy
         run: |
-          echo "Waiting for HTTP server..."
+          echo "Waiting for HTTP server to process application routing..."
           for i in $(seq 1 30); do
+            # 1. Verify the port is physically open first
             if nc -z localhost 8000 2>/dev/null; then
-              echo "Server is up on port 8000."
-              exit 0
+              # 2. Verify the application layer is responding to the protocol endpoint
+              # -s (silent), -o /dev/null (discard output), -w "%{http_code}" (extract status)
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/mcp || echo "000")
+              
+              # FastMCP returns a 200, 400, or 405 depending on methods, but anything except 000/404 means the route exists
+              if [ "$HTTP_STATUS" != "000" ] && [ "$HTTP_STATUS" != "404" ]; then
+                echo "Server is up and application routing is live (HTTP $HTTP_STATUS)."
+                exit 0
+              fi
+              echo "  Port 8000 is open, but application layer is still initializing..."
             fi
             echo "  attempt $i/30 — retrying in 2s"
             sleep 2
           done
-          echo "Server did not become healthy in time."
+          echo "Server application did not become healthy in time."
           docker compose logs
           exit 1
       
