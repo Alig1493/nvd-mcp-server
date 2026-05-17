@@ -1,6 +1,7 @@
 from fastmcp import FastMCP
 from pydantic import ValidationError
 
+from .cli import main
 from .handler import RequestHandler
 from .models.core import NvdVulnerabilityData
 from .models.cve_request import CVERequest
@@ -88,8 +89,6 @@ async def search_cves(request: CVERequest) -> str:
 
 
 def start_mcp_server() -> None:
-    from .cli import main
-
     main()
 
 

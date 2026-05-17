@@ -46,7 +46,10 @@ jobs:
         run: uv sync
 
       - name: Create .env file
-        run: echo "NVD_API_KEY=${NVD_API_KEY}" > .env
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }} # Maps repository secret to step env
+        run: |
+          echo "NVD_API_KEY=${NVD_API_KEY}" > .env
 
       - name: Build and start Docker container
         run: docker compose up --build -d
