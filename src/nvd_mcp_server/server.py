@@ -1,7 +1,6 @@
-from fastmcp import FastMCP
 from pydantic import ValidationError
 
-from .cli import main
+from .cli import main, mcp
 from .handler import RequestHandler
 from .models.core import NvdVulnerabilityData
 from .models.cve_request import CVERequest
@@ -9,7 +8,6 @@ from .models.cve_summary import CveSearchResult, CveSummary
 from .settings import Settings
 from .utils import RequestFailedError, retry
 
-mcp: FastMCP = FastMCP("NVD MCP Server")
 _settings = Settings()
 
 

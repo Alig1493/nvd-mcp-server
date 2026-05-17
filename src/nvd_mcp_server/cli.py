@@ -1,7 +1,10 @@
 import argparse
 
-from .server import mcp
+from fastmcp import FastMCP
+
 from .transport import sse, stdio
+
+mcp: FastMCP = FastMCP("NVD MCP Server")
 
 
 def main() -> None:
