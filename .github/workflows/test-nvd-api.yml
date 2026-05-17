@@ -30,8 +30,8 @@ jobs:
       - name: Run integration tests
         run: uv run src/scripts/test_cve_api.py
 
-  test-sse:
-    name: Run SSE connection test
+  test-http:
+    name: Run http connection test
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +56,7 @@ jobs:
 
       - name: Wait for server to be healthy
         run: |
-          echo "Waiting for SSE server..."
+          echo "Waiting for HTTP server..."
           for i in $(seq 1 30); do
             if nc -z localhost 8000 2>/dev/null; then
               echo "Server is up on port 8000."
@@ -72,7 +72,7 @@ jobs:
       - name: Debug server logs
         run: docker compose logs nvd-mcp-server
 
-      - name: Run SSE connection test
+      - name: Run HTTP connection test
         run: uv run src/scripts/test_sse_connection.py
 
       - name: Dump logs on failure

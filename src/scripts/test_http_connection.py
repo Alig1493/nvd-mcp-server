@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Smoke test for the NVD MCP Server SSE transport.
+Smoke test for the NVD MCP Server HTTP transport.
 
-Connects to a running SSE server, calls search_cves with a known CVE,
+Connects to a running HTTP server, calls search_cves with a known CVE,
 and verifies the response is valid.
 
 Usage:
-    uv run scripts/test_sse_connection.py
-    uv run scripts/test_sse_connection.py --url http://localhost:9090/sse/
+    uv run scripts/test_http_connection.py
+    uv run scripts/test_http_connection.py --url http://localhost:9090/http/
 """
 
 import argparse
@@ -19,7 +19,7 @@ from fastmcp import Client
 
 
 async def main(url: str) -> None:
-    print(f"Connecting to SSE server at {url} ...")
+    print(f"Connecting to HTTP server at {url} ...")
 
     try:
         async with Client(url) as client:
@@ -51,7 +51,7 @@ async def main(url: str) -> None:
             score = vuln["cvss"]["score"]
             severity = vuln["cvss"]["severity"]
             print(f"OK    CVE-2021-44228 returned — score {score} {severity}")
-            print("SSE connection test passed.")
+            print("HTTP connection test passed.")
 
     except Exception as exc:
         print(f"FAIL  {type(exc).__name__}: {exc}")
@@ -62,8 +62,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--url",
-        default="http://0.0.0.0:8000/sse/",
-        help="SSE server URL (default: http://0.0.0.0:8000/sse/)",
+        default="http://localhost:8000/mcp/",
+        help="HTTP server URL (default: http://localhost:8000/mcp/)",
     )
     args = parser.parse_args()
     asyncio.run(main(args.url))

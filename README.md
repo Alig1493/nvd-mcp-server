@@ -81,28 +81,33 @@ That's the only required setting. The NVD API URLs are pre-configured.
 
 ## Step 4 — Connect to your AI assistant
 
-Pick your assistant below and follow the instructions.
+The server natively supports two connection protocols: Local **`stdio`** pipelines and remote **`Streamable HTTP`** pipelines. Pick your setup mode below:
 
-### Claude Desktop
+### Option A: Local Process Setup (stdio)
 
+Great for single-user local workflows where your assistant spawns the backend script directly.
+
+#### Claude Desktop
 Open your Claude Desktop config file:
+
 
 | OS | Path |
 |----|------|
 | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 
-Add the following inside the `"mcpServers"` object (create the object if it doesn't exist):
+Add the following inside the `"mcpServers"` object:
 
 ```json
 {
   "mcpServers": {
-    "nvd-mcp-server": {
+    "nvd-mcp-server-stdio": {
       "type": "stdio",
       "command": "uv",
       "args": [
         "--directory", "/absolute/path/to/nvd-mcp-server",
-        "run", "python", "-m", "nvd_mcp_server.server"
+        "run", "python", "-m", "nvd_mcp_server.server",
+        "--transport", "stdio"
       ],
       "env": {
         "NVD_API_KEY": "your-api-key-here"
@@ -111,95 +116,65 @@ Add the following inside the `"mcpServers"` object (create the object if it does
   }
 }
 ```
+Replace `/absolute/path/to/nvd-mcp-server` with your local repository root.
 
-Replace `/absolute/path/to/nvd-mcp-server` with the full path to where you cloned the repo.
-
-Restart Claude Desktop and look for the 🔌 icon — the tool is ready.
-
----
-
-### Claude Code (CLI)
-
+#### Claude Code (CLI)
 Run this once from your terminal:
-
 ```bash
 claude mcp add nvd-mcp-server \
   --command uv \
-  --args "--directory /absolute/path/to/nvd-mcp-server run python -m nvd_mcp_server.server" \
+  --args "--directory /absolute/path/to/nvd-mcp-server run python -m nvd_mcp_server.server --transport stdio" \
   --env NVD_API_KEY=your-api-key-here
 ```
 
-Or manually add to `~/.claude.json` under `"mcpServers"` (same JSON block as Claude Desktop above).
-
----
-
-### Cursor
-
+#### Cursor
 Open Cursor → Settings → MCP, then add a new server with:
-
-```json
-{
-  "nvd-mcp-server": {
-    "type": "stdio",
-    "command": "uv",
-    "args": [
-      "--directory", "/absolute/path/to/nvd-mcp-server",
-      "run", "python", "-m", "nvd_mcp_server.server"
-    ],
-    "env": {
-      "NVD_API_KEY": "your-api-key-here"
-    }
-  }
-}
-```
+* **Name**: `nvd-mcp-server`
+* **Type**: `command`
+* **Command**: `uv --directory /absolute/path/to/nvd-mcp-server run python -m nvd_mcp_server.server --transport stdio`
 
 ---
 
-### Any other MCP-compatible client (stdio)
+### Option B: Cloud or Container Setup (Streamable HTTP)
 
-Any client that supports the MCP stdio transport (Gemini, Windsurf, Continue, etc.) can use the same configuration pattern:
+Perfect for shared deployments, team networks, or remote clients. This builds a unified, high-performance bidirectional Streamable HTTP container drop.
 
-| Field | Value |
-|-------|-------|
-| Type | `stdio` |
-| Command | `uv` |
-| Args | `--directory /path/to/nvd-mcp-server run python -m nvd_mcp_server.server` |
-| Env | `NVD_API_KEY=your-key` |
-
----
-
-### Docker (SSE transport)
-
-The server can also run as a standalone HTTP service using SSE transport — useful for shared deployments or clients that connect over a network rather than launching a local process.
-
-**Start the server:**
-
+**Start the container locally:**
 ```bash
 docker compose up --build -d
 ```
 
-The server starts at `http://localhost:8000/sse/`.
-
-**Connect your client** using the SSE URL instead of a command:
-
+**Connect your Client Application** using the unified `/mcp` route path endpoint:
 ```json
 {
   "mcpServers": {
-    "nvd-mcp-server": {
-      "type": "sse",
-      "url": "http://localhost:8000/sse/"
+    "nvd-mcp-server-http": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
+*(Note: Ensure your environment matches modern `type: "http"` configurations to utilize the single-endpoint stream engine).*
 
-> **Note:** The `NVD_API_KEY` is read from your `.env` file automatically by Docker Compose.
+**Custom Manual Port Bindings:**
+```bash
+docker build -t nvd-mcp-streamable .
+docker run -d -p 9090:8000 --env-file .env --name nvd-service nvd-mcp-streamable
+```
 
-**Custom port:**
+---
+
+## Smoke Testing the Server Connection
+
+An automated validation script is provided in the repository to check connection loops and query integrations. Run it via your local shell layout:
 
 ```bash
-docker run -e NVD_API_KEY=your-key -p 9090:9090 nvd-mcp-server \
-  .venv/bin/nvd-mcp-server --transport sse --host 0.0.0.0 --port 9090
+# Tests the default local Streamable HTTP pipeline endpoint
+uv run scripts/test_http_connection.py
+
+# Tests a custom port/domain routing configuration
+uv run scripts/test_http_connection.py --url http://localhost:9090/mcp
 ```
 
 ---
@@ -210,19 +185,7 @@ docker run -e NVD_API_KEY=your-key -p 9090:9090 nvd-mcp-server \
 
 > *"What is CVE-2021-44228?"*
 
-```
-CVE-2021-44228 — Log4Shell
-Published: 2021-12-10 | Status: Analyzed
-CVSS: 10.0 CRITICAL (CVSSv3.1) | AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
-
-Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against
-attacker-controlled LDAP endpoints. An attacker who can control log messages
-can execute arbitrary code loaded from a remote server.
-
-CWEs: CWE-20, CWE-400, CWE-502, CWE-917
-CISA KEV: Added 2021-12-10 · Due 2021-12-24
-```
-
+Use code with caution.CVE-2021-44228 — Log4ShellPublished: 2021-12-10 | Status: AnalyzedCVSS: 10.0 CRITICAL (CVSSv3.1) | AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:HApache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect againstattacker-controlled LDAP endpoints. An attacker who can control log messagescan execute arbitrary code loaded from a remote server.CWEs: CWE-20, CWE-400, CWE-502, CWE-917CISA KEV: Added 2021-12-10 · Due 2021-12-24
 ---
 
 ### Find vulnerabilities for a product
@@ -259,6 +222,7 @@ Every response includes a `pagination_hint` telling the assistant exactly how ma
 
 ## Available filters (reference)
 
+
 | Filter | What it does | Example value |
 |--------|-------------|---------------|
 | `cve_id` | Look up a specific CVE | `CVE-2021-44228` |
@@ -278,51 +242,3 @@ Every response includes a `pagination_hint` telling the assistant exactly how ma
 | `no_rejected` | Exclude rejected CVEs | `true` |
 | `cve_tag` | Filter by tag | `disputed`, `unsupported-when-assigned` |
 | `start_index` | Pagination offset | `10`, `20`, ... |
-
-> **Note — CVSSv2:** NVD stopped generating CVSSv2 data on 2022-07-13. `cvss_v2_severity` and `cvss_v2_metrics` filters only match pre-2022 CVEs — they return no results for anything published after that date.
-
-> **Note — date ranges:** The maximum allowable range for any date filter (`pub_start_date`/`pub_end_date`, `last_mod_start_date`/`last_mod_end_date`, `kev_start_date`/`kev_end_date`) is **120 consecutive days**. Requests spanning a longer period will be rejected by the NVD API.
-
----
-
-## Configuration options
-
-These can be set as environment variables or in your `.env` file:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NVD_API_KEY` | *(required)* | Your NVD API key |
-| `NVD_CVE_URL` | `https://services.nvd.nist.gov/rest/json/cves/2.0` | NVD CVE endpoint |
-| `NVD_CVE_HISTORY_URL` | `https://services.nvd.nist.gov/rest/json/cvehistory/2.0` | NVD history endpoint |
-| `TOTAL_TIMEOUT` | `60.0` | Per-request timeout in seconds |
-| `RETRY_MAX_DURATION` | `120` | Total retry budget in seconds |
-
----
-
-## Running the test suite
-
-The test suite makes real calls to the NVD API and covers all supported parameters:
-
-```bash
-uv run src/scripts/test_cve_api.py
-```
-
-The tests run in parallel and print results as they arrive.
-
-To run the tests in CI, add `NVD_API_KEY` as a repository secret in GitHub → Settings → Secrets → Actions.
-
----
-
-## Troubleshooting
-
-**The tool doesn't appear in my AI assistant**
-Restart the application after editing the config file. Check that the path to the repo is absolute (not `~` or relative).
-
-**`NVD_API_KEY` validation error on startup**
-The server requires an API key. Make sure `NVD_API_KEY` is set either in `.env` or in the `"env"` block of your MCP config.
-
-**Requests timing out**
-The NVD API can be slow for broad queries (e.g. searching all CVEs for a very common product). Try narrowing your search with additional filters. You can also increase the timeout by setting `TOTAL_TIMEOUT=120` in your environment.
-
-**Rate limit errors (HTTP 403)**
-Without an API key you are limited to 5 requests per 30 seconds. Get a free key at https://nvd.nist.gov/developers/request-an-api-key.
