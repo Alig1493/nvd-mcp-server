@@ -236,9 +236,13 @@ TEST_CASES: list[TestCase] = [
 
 
 async def run_test(
-    client: Client, tc: TestCase
+    client: Client, tc: TestCase, sem: asyncio.Semaphore
 ) -> tuple[str, bool, str, float]:
-    """Returns (name, passed, detail, elapsed_seconds)."""
+    async with sem:
+        return await _run_test(client, tc)
+
+
+async def _run_test(client: Client, tc: TestCase) -> tuple[str, bool, str, float]:
     t0 = time.monotonic()
     try:
         # by_alias=False ensures snake_case keys so FastMCP can reconstruct CVERequest
@@ -279,8 +283,12 @@ async def main() -> None:
     print(f"{total} test cases  |  running in parallel")
     print(f"{'=' * 62}\n")
 
+    # Limit to 5 concurrent requests — stays within the unauthenticated rate
+    # limit (5 req/30s) and well within the authenticated limit (50 req/30s).
+    sem = asyncio.Semaphore(5)
+
     async with Client(mcp) as client:
-        coros = [run_test(client, tc) for tc in TEST_CASES]
+        coros = [run_test(client, tc, sem) for tc in TEST_CASES]
         completed = 0
 
         for coro in asyncio.as_completed(coros):
