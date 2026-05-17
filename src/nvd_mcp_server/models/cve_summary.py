@@ -35,56 +35,54 @@ class CveSummary(BaseModel):
 
     @classmethod
     def from_cve_item(cls, cve: CveItem) -> CveSummary:
-        description = next(
-            (d.value for d in cve.descriptions if d.lang == "en"), ""
-        )
+        description = next((d.value for d in cve.descriptions if d.lang == "en"), "")
 
         cvss: CvssSummary | None = None
         m = cve.metrics
         if m:
             if m.cvss_metric_v40:
-                p = next(
+                p40 = next(
                     (x for x in m.cvss_metric_v40 if x.type == "Primary"),
                     m.cvss_metric_v40[0],
                 )
                 cvss = CvssSummary(
                     version="4.0",
-                    score=p.cvss_data.base_score,
-                    severity=p.cvss_data.base_severity,
-                    vector=p.cvss_data.vector_string,
+                    score=p40.cvss_data.base_score,
+                    severity=p40.cvss_data.base_severity,
+                    vector=p40.cvss_data.vector_string,
                 )
             elif m.cvss_metric_v31:
-                p = next(
+                p31 = next(
                     (x for x in m.cvss_metric_v31 if x.type == "Primary"),
                     m.cvss_metric_v31[0],
                 )
                 cvss = CvssSummary(
                     version="3.1",
-                    score=p.cvss_data.base_score,
-                    severity=p.cvss_data.base_severity,
-                    vector=p.cvss_data.vector_string,
+                    score=p31.cvss_data.base_score,
+                    severity=p31.cvss_data.base_severity,
+                    vector=p31.cvss_data.vector_string,
                 )
             elif m.cvss_metric_v30:
-                p = next(
+                p30 = next(
                     (x for x in m.cvss_metric_v30 if x.type == "Primary"),
                     m.cvss_metric_v30[0],
                 )
                 cvss = CvssSummary(
                     version="3.0",
-                    score=p.cvss_data.base_score,
-                    severity=p.cvss_data.base_severity,
-                    vector=p.cvss_data.vector_string,
+                    score=p30.cvss_data.base_score,
+                    severity=p30.cvss_data.base_severity,
+                    vector=p30.cvss_data.vector_string,
                 )
             elif m.cvss_metric_v2:
-                p = next(
+                p2 = next(
                     (x for x in m.cvss_metric_v2 if x.type == "Primary"),
                     m.cvss_metric_v2[0],
                 )
                 cvss = CvssSummary(
                     version="2.0",
-                    score=p.cvss_data.base_score,
-                    severity=p.base_severity or "",
-                    vector=p.cvss_data.vector_string,
+                    score=p2.cvss_data.base_score,
+                    severity=p2.base_severity or "",
+                    vector=p2.cvss_data.vector_string,
                 )
 
         cwes: list[str] = []

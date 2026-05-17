@@ -252,9 +252,7 @@ class CvssV2Model(BaseModel):
     @classmethod
     def validate_vector_string(cls, v: str) -> str:
         """Validate the CVSS vector string format."""
-        return validate_vector_string(
-            v, VectorStringType.V2
-        )
+        return validate_vector_string(v, VectorStringType.V2)
 
     @field_validator("version")
     @classmethod
@@ -296,12 +294,12 @@ def create_base_cvss_v2(
     """
     return CvssV2Model(
         version="2.0",
-        vectorString=vector_string,
-        accessVector=access_vector,
-        accessComplexity=access_complexity,
+        vector_string=vector_string,
+        access_vector=access_vector,
+        access_complexity=access_complexity,
         authentication=authentication,
-        confidentialityImpact=confidentiality_impact,
-        integrityImpact=integrity_impact,
-        availabilityImpact=availability_impact,
-        baseScore=base_score,
+        confidentiality_impact=confidentiality_impact,
+        integrity_impact=integrity_impact,
+        availability_impact=availability_impact,
+        base_score=base_score,
     )

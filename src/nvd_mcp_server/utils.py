@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from time import time
-from typing import AsyncGenerator, Callable
+from typing import Any, AsyncGenerator, Callable
 
 import aiohttp
 
@@ -11,18 +11,20 @@ logger = logging.getLogger(__name__)
 
 class RequestFailedError(Exception):
     """Raised when a request fails after all retries are exhausted."""
+
     pass
 
 
 @asynccontextmanager
 async def retry(
     max_duration: int, base_delay: int = 1
-) -> AsyncGenerator[Callable, None]:
+) -> AsyncGenerator[Callable[..., Any], None]:
     """
     Context manager that provides a retry function with exponential backoff
     for up to max_duration seconds defined as int.
     """
-    async def retry_func(func: Callable, *args, **kwargs):
+
+    async def retry_func(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         start_time = time()
         attempt = 1
 

@@ -727,6 +727,7 @@ dependencies = [
     { name = "fastmcp" },
     { name = "pytest-asyncio" },
     { name = "python-dotenv" },
+    { name = "uvicorn" },
 ]
 
 [package.optional-dependencies]
@@ -753,6 +754,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "uvicorn", specifier = ">=0.30.0" },
 ]
 provides-extras = ["dev"]
 

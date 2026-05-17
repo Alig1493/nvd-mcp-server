@@ -40,7 +40,7 @@ async def search_cves(request: CVERequest) -> str:
     query_params["resultsPerPage"] = "10"
 
     headers = {"apiKey": _settings.nvd_api_key}
-    url = str(_settings.nvd_cve_url)
+    url = str(_settings.nvd_cve_url).rstrip("/")
 
     try:
         async with retry(_settings.retry_max_duration) as retry_func:
@@ -80,13 +80,17 @@ async def search_cves(request: CVERequest) -> str:
         pagination_hint=(
             f"{raw.total_results - next_index} more results available. "
             f"Call again with start_index={next_index} to get the next page."
-        ) if has_more else None,
+        )
+        if has_more
+        else None,
     )
     return result.model_dump_json()
 
 
 def start_mcp_server() -> None:
-    mcp.run()
+    from .cli import main
+
+    main()
 
 
 if __name__ == "__main__":

@@ -155,7 +155,7 @@ Open Cursor → Settings → MCP, then add a new server with:
 
 ---
 
-### Any other MCP-compatible client
+### Any other MCP-compatible client (stdio)
 
 Any client that supports the MCP stdio transport (Gemini, Windsurf, Continue, etc.) can use the same configuration pattern:
 
@@ -165,6 +165,42 @@ Any client that supports the MCP stdio transport (Gemini, Windsurf, Continue, et
 | Command | `uv` |
 | Args | `--directory /path/to/nvd-mcp-server run python -m nvd_mcp_server.server` |
 | Env | `NVD_API_KEY=your-key` |
+
+---
+
+### Docker (SSE transport)
+
+The server can also run as a standalone HTTP service using SSE transport — useful for shared deployments or clients that connect over a network rather than launching a local process.
+
+**Start the server:**
+
+```bash
+docker compose up --build -d
+```
+
+The server starts at `http://localhost:8000/sse/`.
+
+**Connect your client** using the SSE URL instead of a command:
+
+```json
+{
+  "mcpServers": {
+    "nvd-mcp-server": {
+      "type": "sse",
+      "url": "http://localhost:8000/sse/"
+    }
+  }
+}
+```
+
+> **Note:** The `NVD_API_KEY` is read from your `.env` file automatically by Docker Compose.
+
+**Custom port:**
+
+```bash
+docker run -e NVD_API_KEY=your-key -p 9090:9090 nvd-mcp-server \
+  .venv/bin/nvd-mcp-server --transport sse --host 0.0.0.0 --port 9090
+```
 
 ---
 
