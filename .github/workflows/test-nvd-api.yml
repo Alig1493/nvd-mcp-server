@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: Run integration tests
-        run: uv run scripts/test_cve_api.py
+        run: uv run src/scripts/test_cve_api.py
 
   test-sse:
     name: Run SSE connection test
@@ -55,8 +55,8 @@ jobs:
         run: |
           echo "Waiting for SSE server..."
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8000/sse/ > /dev/null 2>&1; then
-              echo "Server is up."
+            if nc -z localhost 8000 2>/dev/null; then
+              echo "Server is up on port 8000."
               exit 0
             fi
             echo "  attempt $i/30 — retrying in 2s"
@@ -67,7 +67,7 @@ jobs:
           exit 1
 
       - name: Run SSE connection test
-        run: uv run scripts/test_sse_connection.py --url http://localhost:8000/sse/
+        run: uv run src/scripts/test_sse_connection.py --url http://localhost:8000/sse/
 
       - name: Dump logs on failure
         if: failure()

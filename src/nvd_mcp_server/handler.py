@@ -44,12 +44,11 @@ class RequestHandler:
 
         try:
             return await self.session.get(
-                url, params=self.query_params,
+                url,
+                params=self.query_params,
                 headers=self.headers,
-                allow_redirects=False
+                allow_redirects=False,
             )
         except aiohttp.ClientError as e:
-            logger.error(
-                f"Request encountered an errror: {str(e)}"
-            )
+            logger.error(f"Request encountered an errror: {str(e)}")
             raise e

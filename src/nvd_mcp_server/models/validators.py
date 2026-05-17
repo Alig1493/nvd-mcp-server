@@ -56,7 +56,6 @@ def validate_vector_string(
                 f"Invalid vector string type of value {vector_string_type} provided."
             )
 
-
     if not re.match(pattern, vector_string):
         logger.error(
             f"Invalid vector string {vector_string} "

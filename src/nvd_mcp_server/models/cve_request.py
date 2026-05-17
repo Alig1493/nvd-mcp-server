@@ -563,7 +563,8 @@ class CVERequest(BaseModel):
                 "Both `cpeName` and `virtualMatchString` provided. "
                 "Only `cpeName` will be used, cpeName: %s, "
                 "virtualMatchString will be ignored, virtualMatchString: %s.",
-                self.cpe_name, self.virtual_match_string
+                self.cpe_name,
+                self.virtual_match_string,
             )
 
         if (has_version_start or has_version_end) and not has_virtual_match:
@@ -600,9 +601,7 @@ class CVERequest(BaseModel):
                 )
 
         if self.is_vulnerable is not None and self.cpe_name is None:
-            raise ValueError(
-                "When filtering by isVulnerable, cpeName is required."
-            )
+            raise ValueError("When filtering by isVulnerable, cpeName is required.")
 
         if self.is_vulnerable is not None and has_virtual_match:
             raise ValueError(
@@ -615,11 +614,13 @@ class CVERequest(BaseModel):
     def validate_cvss_severity_exclusivity(self) -> "CVERequest":
         """Validate that only one CVSS severity parameter is used."""
 
-        cvss_severity_count = sum([
-            self.cvss_v2_severity is not None,
-            self.cvss_v3_severity is not None,
-            self.cvss_v4_severity is not None
-        ])
+        cvss_severity_count = sum(
+            [
+                self.cvss_v2_severity is not None,
+                self.cvss_v3_severity is not None,
+                self.cvss_v4_severity is not None,
+            ]
+        )
 
         if cvss_severity_count > 1:
             raise ValueError(
@@ -633,11 +634,13 @@ class CVERequest(BaseModel):
     def validate_cvss_metrics_exclusivity(self) -> "CVERequest":
         """Validate that only one CVSS metrics parameter is used."""
 
-        cvss_metrics_count = sum([
-            self.cvss_v2_metrics is not None,
-            self.cvss_v3_metrics is not None,
-            self.cvss_v4_metrics is not None
-        ])
+        cvss_metrics_count = sum(
+            [
+                self.cvss_v2_metrics is not None,
+                self.cvss_v3_metrics is not None,
+                self.cvss_v4_metrics is not None,
+            ]
+        )
 
         if cvss_metrics_count > 1:
             raise ValueError(

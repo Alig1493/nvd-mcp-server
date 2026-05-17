@@ -377,9 +377,7 @@ class CvssV30Model(BaseModel):
     @classmethod
     def validate_vector_string(cls, v: str) -> str:
         """Validate the CVSS v3.0 vector string format."""
-        return validate_vector_string(
-            v, VectorStringType.V3
-        )
+        return validate_vector_string(v, VectorStringType.V3)
 
     @field_validator("version")
     @classmethod

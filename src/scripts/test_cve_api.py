@@ -5,7 +5,7 @@ End-to-end test script for the NVD MCP Server search_cves tool.
 Exercises every CVERequest parameter with real values against the live NVD API.
 Run from the project root:
 
-    uv run scripts/test_cve_api.py
+    uv run src/scripts/test_cve_api.py
 """
 
 import asyncio
@@ -15,19 +15,23 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from fastmcp.client.client import CallToolResult
+from fastmcp.client.transports import ClientTransport
+from mcp.types import TextContent
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastmcp import Client
 
-from src.nvd_mcp_server.models.cve_request import (
+from nvd_mcp_server.models.cve_request import (
+    CVERequest,
+    CveTag,
     CVSSV2Severity,
     CVSSV3Severity,
     CVSSV4Severity,
-    CVERequest,
-    CveTag,
     VersionType,
 )
-from src.nvd_mcp_server.server import mcp
+from nvd_mcp_server.server import mcp
 
 
 @dataclass
@@ -236,13 +240,31 @@ TEST_CASES: list[TestCase] = [
 
 
 async def run_test(
-    client: Client, tc: TestCase, sem: asyncio.Semaphore
+    client: Client[ClientTransport], tc: TestCase, sem: asyncio.Semaphore
 ) -> tuple[str, bool, str, float]:
     async with sem:
         return await _run_test(client, tc)
 
 
-async def _run_test(client: Client, tc: TestCase) -> tuple[str, bool, str, float]:
+def _get_text_content(result: CallToolResult) -> str | None:
+    match result.content:
+        case TextContent():
+            return result.content[0].text
+        case _:
+            return None
+
+
+def _get_error_content(result: CallToolResult) -> str:
+    base_str = "Tool returned error"
+    text_content = _get_text_content(result=result)
+    if text_content:
+        return f"{base_str}: {text_content}"
+    return f"{base_str}."
+
+
+async def _run_test(
+    client: Client[ClientTransport], tc: TestCase
+) -> tuple[str, bool, str, float]:
     t0 = time.monotonic()
     try:
         # by_alias=False ensures snake_case keys so FastMCP can reconstruct CVERequest
@@ -254,10 +276,13 @@ async def _run_test(client: Client, tc: TestCase) -> tuple[str, bool, str, float
         elapsed = time.monotonic() - t0
 
         if result.is_error:
-            msg = f"Tool returned error: {result.content[0].text}"
+            msg = _get_error_content(result)
             return tc.name, False, msg, elapsed
 
-        data = json.loads(result.content[0].text)
+        text_content = _get_text_content(result=result)
+        if not text_content:
+            return tc.name, False, "Invalid content returned", elapsed
+        data = json.loads(text_content)
         total = data["total_results"]
         returned = len(data["vulnerabilities"])
         first_id = data["vulnerabilities"][0]["id"] if returned > 0 else "—"

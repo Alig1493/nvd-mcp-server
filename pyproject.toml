@@ -8,7 +8,7 @@ packages = ["src/nvd_mcp_server"]
 [project]
 name = "nvd-mcp-server"
 version = "0.1.0"
-description = ""
+description = "MCP server for the NIST National Vulnerability Database (NVD)"
 authors = [
     {name = "Mohammed Ali Zubair", email = "mazg1493@gmail.com"},
 ]
@@ -16,23 +16,15 @@ dependencies = [
     "fastmcp",
     "aiohttp",
     "uvicorn>=0.30.0",
-    "python-dotenv>=1.1.1",
-    "pytest-asyncio>=1.1.0",
+    "pydantic-settings",
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 
 [project.scripts]
 nvd-mcp-server = "nvd_mcp_server.cli:main"
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "ipdb",
-]
-
 [tool.uv]
 dev-dependencies = [
-    "pytest",
     "ipdb",
     "pre-commit>=4.2.0",
     "ruff>=0.12.4",
@@ -40,23 +32,19 @@ dev-dependencies = [
     "coverage>=7.10.2",
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = []
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 plugins = ["pydantic.mypy"]
+mypy_path = "src"
+explicit_package_bases = true

@@ -434,9 +434,7 @@ class CvssV31Model(BaseModel):
         Raises:
             ValueError: If the vector string format is invalid
         """
-        return validate_vector_string(
-            v, VectorStringType.V31
-        )
+        return validate_vector_string(v, VectorStringType.V31)
 
     model_config = ConfigDict(
         populate_by_name=True,
