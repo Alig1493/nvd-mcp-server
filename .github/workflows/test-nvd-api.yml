@@ -28,7 +28,7 @@ jobs:
         run: uv sync
 
       - name: Run integration tests
-        run: uv run src/scripts/test_cve_api.py
+        run: uv run src/scripts/test_stdio_connection.py
 
   test-http:
     name: Run http connection test
@@ -71,7 +71,7 @@ jobs:
           exit 1
       
       - name: Debug server logs
-        run: docker compose logs nvd-mcp-server
+        run: docker compose logs app
 
       - name: Run HTTP connection test
         run: uv run src/scripts/test_http_connection.py

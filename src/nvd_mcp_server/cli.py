@@ -2,12 +2,15 @@ import argparse
 
 from fastmcp import FastMCP
 from fastmcp.tools import FunctionTool
+from fastmcp.utilities.logging import get_logger
 
 from .server import search_cves
-from .transport import http, stdio
 
 mcp: FastMCP = FastMCP("NVD MCP Server")
 mcp.add_tool(FunctionTool.from_function(search_cves))
+
+
+logger = get_logger(__name__)
 
 
 def main() -> None:
@@ -31,8 +34,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.transport == "http":
-        print(f"Starting Streamable HTTP MCP Server on http://{args.host}:{args.port}")
-        http.run(mcp, host=args.host, port=args.port)
-    else:
-        stdio.run(mcp)
+    try:
+        if args.transport == "http":
+            mcp.run(transport=args.transport, host=args.host, port=args.port)
+        else:
+            mcp.run(transport=args.transport)
+    except KeyboardInterrupt:
+        logger.info("Exiting.")
+        exit(0)
+    except Exception as exc:
+        logger.warning(f"Existing due to {exc}")
+        exit(1)

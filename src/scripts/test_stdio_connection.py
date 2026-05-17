@@ -5,7 +5,7 @@ End-to-end test script for the NVD MCP Server search_cves tool.
 Exercises every CVERequest parameter with real values against the live NVD API.
 Run from the project root:
 
-    uv run src/scripts/test_cve_api.py
+    uv run src/scripts/test_stdio_connection.py
 """
 
 import asyncio
