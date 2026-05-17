@@ -1,7 +1,13 @@
 import argparse
 
-from .server import mcp
+from fastmcp import FastMCP
+from fastmcp.tools import FunctionTool
+
+from .server import search_cves
 from .transport import http, stdio
+
+mcp: FastMCP = FastMCP("NVD MCP Server")
+mcp.add_tool(FunctionTool.from_function(search_cves))
 
 
 def main() -> None:
@@ -14,8 +20,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--host",
-        default="0.0.0.0",
-        help="Host to bind to — HTTP only (default: 0.0.0.0)",
+        default="127.0.0.1",
+        help="Host to bind to — HTTP only (default: 127.0.0.1)",
     )
     parser.add_argument(
         "--port",

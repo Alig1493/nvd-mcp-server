@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastmcp import Client
 
+from nvd_mcp_server.cli import mcp
 from nvd_mcp_server.models.cve_request import (
     CVERequest,
     CveTag,
@@ -31,7 +32,6 @@ from nvd_mcp_server.models.cve_request import (
     CVSSV4Severity,
     VersionType,
 )
-from nvd_mcp_server.server import mcp
 
 
 @dataclass

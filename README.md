@@ -106,7 +106,7 @@ Add the following inside the `"mcpServers"` object:
       "command": "uv",
       "args": [
         "--directory", "/absolute/path/to/nvd-mcp-server",
-        "run", "python", "-m", "nvd_mcp_server.server",
+        "run", "nvd-mcp-server",
         "--transport", "stdio"
       ],
       "env": {
@@ -123,7 +123,7 @@ Run this once from your terminal:
 ```bash
 claude mcp add nvd-mcp-server \
   --command uv \
-  --args "--directory /absolute/path/to/nvd-mcp-server run python -m nvd_mcp_server.server --transport stdio" \
+  --args "--directory /absolute/path/to/nvd-mcp-server run nvd-mcp-server --transport stdio" \
   --env NVD_API_KEY=your-api-key-here
 ```
 
@@ -131,7 +131,7 @@ claude mcp add nvd-mcp-server \
 Open Cursor → Settings → MCP, then add a new server with:
 * **Name**: `nvd-mcp-server`
 * **Type**: `command`
-* **Command**: `uv --directory /absolute/path/to/nvd-mcp-server run python -m nvd_mcp_server.server --transport stdio`
+* **Command**: `uv --directory /absolute/path/to/nvd-mcp-server run nvd-mcp-server --transport stdio`
 
 ---
 

@@ -1,4 +1,3 @@
-from fastmcp import FastMCP
 from pydantic import ValidationError
 
 from .handler import RequestHandler
@@ -8,11 +7,9 @@ from .models.cve_summary import CveSearchResult, CveSummary
 from .settings import Settings
 from .utils import RequestFailedError, retry
 
-mcp: FastMCP = FastMCP("NVD MCP Server")
 _settings = Settings()
 
 
-@mcp.tool()
 async def search_cves(request: CVERequest) -> str:
     """
     Search the National Vulnerability Database (NVD) for CVEs
@@ -85,13 +82,3 @@ async def search_cves(request: CVERequest) -> str:
         else None,
     )
     return result.model_dump_json()
-
-
-def start_mcp_server() -> None:
-    from .cli import main
-
-    main()
-
-
-if __name__ == "__main__":
-    start_mcp_server()
