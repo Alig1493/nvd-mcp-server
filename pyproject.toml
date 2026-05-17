@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nvd-mcp-server"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Mohammed Ali Zubair", email = "mazg1493@gmail.com"},
+]
+dependencies = [
+    "fastmcp",
+    "aiohttp",
+    "python-dotenv>=1.1.1",
+    "pytest-asyncio>=1.1.0",
+]
+requires-python = ">=3.13"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ipdb",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "ipdb",
+    "pre-commit>=4.2.0",
+    "ruff>=0.12.4",
+    "mypy>=1.17.0",
+    "coverage>=7.10.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
