@@ -185,7 +185,18 @@ uv run scripts/test_http_connection.py --url http://localhost:9090/mcp
 
 > *"What is CVE-2021-44228?"*
 
-Use code with caution.CVE-2021-44228 — Log4ShellPublished: 2021-12-10 | Status: AnalyzedCVSS: 10.0 CRITICAL (CVSSv3.1) | AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:HApache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect againstattacker-controlled LDAP endpoints. An attacker who can control log messagescan execute arbitrary code loaded from a remote server.CWEs: CWE-20, CWE-400, CWE-502, CWE-917CISA KEV: Added 2021-12-10 · Due 2021-12-24
+
+CVE-2021-44228 — Log4Shell
+Published: 2021-12-10 | Status: Analyzed
+CVSS: 10.0 CRITICAL (CVSSv3.1) | AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+
+Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features do not protect against
+attacker-controlled LDAP endpoints. An attacker who can control log messages
+can execute arbitrary code loaded from a remote server.
+
+CWEs: CWE-20, CWE-400, CWE-502, CWE-917
+CISA KEV: Added 2021-12-10 · Due 2021-12-24
+
 ---
 
 ### Find vulnerabilities for a product
