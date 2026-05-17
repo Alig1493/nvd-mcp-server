@@ -62,8 +62,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--url",
-        default="http://localhost:8000/mcp/",
-        help="HTTP server URL (default: http://localhost:8000/mcp/)",
+        default="http://localhost:8000/mcp",
+        help="HTTP server URL (default: http://localhost:8000/mcp)",
     )
     args = parser.parse_args()
     asyncio.run(main(args.url))
