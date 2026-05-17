@@ -65,9 +65,12 @@ jobs:
           echo "Server did not become healthy in time."
           docker compose logs
           exit 1
+      
+      - name: Debug server logs
+        run: docker compose logs nvd-mcp-server
 
       - name: Run SSE connection test
-        run: uv run src/scripts/test_sse_connection.py --url http://localhost:8000/sse/
+        run: uv run src/scripts/test_sse_connection.py
 
       - name: Dump logs on failure
         if: failure()

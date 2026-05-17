@@ -247,7 +247,7 @@ async def run_test(
 
 
 def _get_text_content(result: CallToolResult) -> str | None:
-    match result.content:
+    match result.content[0]:
         case TextContent():
             return result.content[0].text
         case _:
@@ -278,6 +278,9 @@ async def _run_test(
         if result.is_error:
             msg = _get_error_content(result)
             return tc.name, False, msg, elapsed
+
+        if len(result.content) == 0:
+            return tc.name, False, "No content returned", elapsed
 
         text_content = _get_text_content(result=result)
         if not text_content:
