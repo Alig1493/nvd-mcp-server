@@ -1,0 +1,28 @@
+name: NVD API Integration Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "0 8 * * 1" # Every Monday at 8am UTC — catches NVD API changes
+
+jobs:
+  test:
+    name: Run end-to-end NVD API tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run integration tests
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: uv run scripts/test_cve_api.py
