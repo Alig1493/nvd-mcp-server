@@ -3,8 +3,6 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      NVD_API_KEY: ${NVD_API_KEY}
     env_file:
       - .env
     restart: unless-stopped
