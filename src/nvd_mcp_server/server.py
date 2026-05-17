@@ -34,8 +34,6 @@ async def search_cves(request: CVERequest) -> str:
         else:
             query_params[key] = str(value)
 
-    query_params["resultsPerPage"] = "10"
-
     headers = {"apiKey": _settings.nvd_api_key}
     url = str(_settings.nvd_cve_url).rstrip("/")
 
