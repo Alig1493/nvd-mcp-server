@@ -3,6 +3,9 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      # Required so the Python code doesn't raise an unhandled initialization exception
+      - NVD_API_KEY=${NVD_API_KEY}
     env_file:
       - .env
     restart: unless-stopped
