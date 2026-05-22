@@ -1,13 +1,45 @@
+from typing import Any
+
 from pydantic import ValidationError
+
+from nvd_mcp_server.models.cve_history import (
+    NvdCveHistoryRequest,
+    NvdCveHistoryResponse,
+)
 
 from .handler import RequestHandler
 from .models.core import NvdVulnerabilityData
 from .models.cve_request import CVERequest
-from .models.cve_summary import CveSearchResult, CveSummary
+from .models.cve_summary import CveHistorySearchResult, CveSearchResult
 from .settings import Settings
 from .utils import RequestFailedError, retry
 
 _settings = Settings()
+
+
+async def _fetch_data(url: str, query_params: dict[str, str]) -> Any:
+    async def _fetch() -> dict[str, Any]:
+        async with RequestHandler(
+            _settings,
+            query_params=query_params,
+            headers={"apiKey": _settings.nvd_api_key},
+        ) as handler:
+            response = await handler.get(url)
+            if response.status != 200:
+                error_body = await response.text()
+                raise RuntimeError(
+                    f"NVD API returned HTTP {response.status}: {error_body}"
+                )
+            return await response.json()  # type: ignore[no-any-return]
+
+    try:
+        async with retry(_settings.retry_max_duration) as retry_func:
+            return await retry_func(_fetch)
+    except RequestFailedError:
+        raise RuntimeError(
+            f"NVD API request timed out after {_settings.retry_max_duration}s. "
+            "Try narrowing your search filters."
+        )
 
 
 async def search_cves(request: CVERequest) -> str:
@@ -26,57 +58,37 @@ async def search_cves(request: CVERequest) -> str:
       - isVulnerable requires cpeName and excludes virtualMatchString
       - version range params (versionStart/End) require virtualMatchString
     """
-    query_params: dict[str, str] = {}
-    for key, value in request.model_dump(by_alias=True, exclude_none=True).items():
-        if isinstance(value, bool):
-            if value:
-                query_params[key] = ""
-        else:
-            query_params[key] = str(value)
-
-    headers = {"apiKey": _settings.nvd_api_key}
-    url = str(_settings.nvd_cve_url).rstrip("/")
-
-    try:
-        async with retry(_settings.retry_max_duration) as retry_func:
-            async with RequestHandler(
-                _settings, query_params=query_params, headers=headers
-            ) as handler:
-                response = await retry_func(handler.get, url)
-
-                if response.status != 200:
-                    error_body = await response.text()
-                    raise RuntimeError(
-                        f"NVD API returned HTTP {response.status}: {error_body}"
-                    )
-
-                data = await response.json()
-    except RequestFailedError:
-        raise RuntimeError(
-            f"NVD API request timed out after {_settings.retry_max_duration}s. "
-            "Try narrowing your search filters."
-        )
+    query_params = request.to_query_params()
+    data = await _fetch_data(_settings.nvd_cve_url, query_params)
 
     try:
         raw = NvdVulnerabilityData.model_validate(data)
     except ValidationError as exc:
         raise RuntimeError(f"NVD API response failed validation: {exc}") from exc
 
-    next_index = raw.start_index + raw.results_per_page
-    has_more = next_index < raw.total_results
-    result = CveSearchResult(
-        total_results=raw.total_results,
-        results_per_page=raw.results_per_page,
-        start_index=raw.start_index,
-        vulnerabilities=[
-            CveSummary.from_cve_item(item.cve) for item in raw.vulnerabilities
-        ],
-        next_start_index=next_index if has_more else None,
-        pagination_hint=(
-            f"{raw.total_results - next_index} more results available. "
-            f"Call again with start_index={next_index} to get the next page."
-        )
-        if has_more
-        else None,
+    return CveSearchResult.from_response(raw).model_dump_json()
+
+
+async def search_cve_history(request: NvdCveHistoryRequest) -> str:
+    """
+    Search the NVD CVE Change History API for changes made to CVE records.
+
+    Returns a JSON string with pagination info and a list of change events,
+    each containing the CVE ID, event type, source, timestamp, and change details.
+
+    All filter parameters are optional. If filtering by date, both
+    changeStartDate and changeEndDate are required (max 120-day range).
+    """
+    data = await _fetch_data(
+        _settings.nvd_cve_history_url,
+        request.model_dump(by_alias=True, exclude_none=True, mode="json"),
     )
-    return result.model_dump_json()
+
+    try:
+        raw = NvdCveHistoryResponse.model_validate(data)
+    except ValidationError as exc:
+        raise RuntimeError(
+            f"NVD API history response failed validation: {exc}"
+        ) from exc
+
+    return CveHistorySearchResult.from_response(raw).model_dump_json()

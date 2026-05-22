@@ -45,7 +45,7 @@ class LangString(BaseModel):
         value: The actual string content (max 4096 characters)
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     lang: str
     value: str = Field(max_length=4096)
@@ -61,7 +61,7 @@ class Reference(BaseModel):
         tags: Optional list of tags categorizing the reference
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     url: str = Field(max_length=500, pattern=r"^(ftp|http)s?://\S+$")
     source: Optional[str] = None
@@ -78,7 +78,7 @@ class VendorComment(BaseModel):
         last_modified: When the comment was last modified
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     organization: str
     comment: str
@@ -95,7 +95,7 @@ class Weakness(BaseModel):
         description: List of language-specific descriptions
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source: str
     type: str
@@ -116,7 +116,7 @@ class CpeMatch(BaseModel):
         version_end_including: End version (inclusive) for version range
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     vulnerable: bool
     criteria: str
@@ -137,7 +137,7 @@ class Node(BaseModel):
         cpe_match: List of CPE match criteria
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     operator: OperatorEnum
     negate: Optional[bool] = None
@@ -154,7 +154,7 @@ class VulnConfig(BaseModel):
         nodes: List of configuration nodes
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     operator: Optional[OperatorEnum] = None
     negate: Optional[bool] = None
@@ -179,7 +179,7 @@ class CvssV2(BaseModel):
         user_interaction_required: Whether user interaction is required
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source: str
     type: CvssTypeEnum
@@ -210,7 +210,7 @@ class CvssV30(BaseModel):
         impact_score: Impact subscore (0-10)
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source: str
     type: CvssTypeEnum
@@ -233,7 +233,7 @@ class CvssV31(BaseModel):
         impact_score: Impact subscore (0-10)
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source: str
     type: CvssTypeEnum
@@ -254,7 +254,7 @@ class CvssV40(BaseModel):
         cvss_data: The CVSS v4.0 data structure
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source: str
     type: CvssTypeEnum
@@ -272,7 +272,7 @@ class Metrics(BaseModel):
         cvss_metric_v2: List of CVSS v2.0 metrics
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     cvss_metric_v40: Optional[List[CvssV40]] = Field(None, alias="cvssMetricV40")
     cvss_metric_v31: Optional[List[CvssV31]] = Field(None, alias="cvssMetricV31")
@@ -290,7 +290,7 @@ class CveTag(BaseModel):
         tags: List of tags categorizing the CVE
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     source_identifier: str = Field(
         alias="sourceIdentifier",
@@ -328,7 +328,7 @@ class CveItem(BaseModel):
         vendor_comments: Comments from vendors
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     id: str = Field(pattern=r"^CVE-[0-9]{4}-[0-9]{4,}$")
     source_identifier: Optional[str] = Field(None, alias="sourceIdentifier")
@@ -366,7 +366,7 @@ class DefCveItem(BaseModel):
         cve: The CVE item containing all vulnerability data
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True, validate_by_alias=True)
 
     cve: CveItem
 
@@ -391,7 +391,8 @@ class NvdVulnerabilityData(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
     )
 
     results_per_page: int = Field(alias="resultsPerPage")

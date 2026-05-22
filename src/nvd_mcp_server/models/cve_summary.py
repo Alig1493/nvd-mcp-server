@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
+from nvd_mcp_server.models.cve_history import NvdCveHistoryResponse
+
 if TYPE_CHECKING:
-    from .core import CveItem
+    from .core import CveItem, NvdVulnerabilityData
+    from .cve_history import DefChange
 
 
 class CvssSummary(BaseModel):
@@ -113,10 +116,89 @@ class CveSummary(BaseModel):
         )
 
 
-class CveSearchResult(BaseModel):
+class BaseSearchResult(BaseModel):
     total_results: int
     results_per_page: int
     start_index: int
-    vulnerabilities: list[CveSummary]
     next_start_index: Optional[int] = None
     pagination_hint: Optional[str] = None
+
+
+class CveSearchResult(BaseSearchResult):
+    vulnerabilities: list[CveSummary]
+
+    @classmethod
+    def from_response(cls, raw: NvdVulnerabilityData) -> CveSearchResult:
+        next_index = raw.start_index + raw.results_per_page
+        has_more = next_index < raw.total_results
+        return cls(
+            total_results=raw.total_results,
+            results_per_page=raw.results_per_page,
+            start_index=raw.start_index,
+            vulnerabilities=[
+                CveSummary.from_cve_item(item.cve) for item in raw.vulnerabilities
+            ],
+            next_start_index=next_index if has_more else None,
+            pagination_hint=(
+                f"{raw.total_results - next_index} more results available. "
+                f"Call again with start_index={next_index} to get the next page."
+            )
+            if has_more
+            else None,
+        )
+
+
+class ChangeDetail(BaseModel):
+    type: str
+    action: Optional[str] = None
+    old: Optional[str] = None
+    new: Optional[str] = None
+
+
+class ChangeSummary(BaseModel):
+    cve_id: str
+    event: str
+    source: str
+    created: Optional[datetime] = None
+    details: list[ChangeDetail]
+
+    @classmethod
+    def from_def_change(cls, def_change: DefChange) -> ChangeSummary:
+        c = def_change.change
+        return cls(
+            cve_id=c.cve_id,
+            event=c.event_name,
+            source=c.source_identifier,
+            created=c.created,
+            details=[
+                ChangeDetail(
+                    type=d.type,
+                    action=d.action,
+                    old=d.old_value,
+                    new=d.new_value,
+                )
+                for d in (c.details or [])
+            ],
+        )
+
+
+class CveHistorySearchResult(BaseSearchResult):
+    changes: list[ChangeSummary]
+
+    @classmethod
+    def from_response(cls, raw: NvdCveHistoryResponse) -> CveHistorySearchResult:
+        next_index = raw.start_index + raw.results_per_page
+        has_more = next_index < raw.total_results
+        return cls(
+            total_results=raw.total_results,
+            results_per_page=raw.results_per_page,
+            start_index=raw.start_index,
+            next_start_index=next_index if has_more else None,
+            pagination_hint=(
+                f"{raw.total_results - next_index} more results available. "
+                f"Call again with start_index={next_index} to get the next page."
+            )
+            if has_more
+            else None,
+            changes=[ChangeSummary.from_def_change(c) for c in (raw.cve_changes or [])],
+        )

@@ -649,3 +649,18 @@ class CVERequest(BaseModel):
             )
 
         return self
+
+    def to_query_params(self) -> dict[str, str]:
+        """Serialize to NVD API query parameters.
+
+        Booleans become empty strings when True (NVD flag convention), omitted
+        when False or None. All other values use their string representation.
+        """
+        params: dict[str, str] = {}
+        for key, value in self.model_dump(by_alias=True, exclude_none=True).items():
+            if isinstance(value, bool):
+                if value:
+                    params[key] = ""
+            else:
+                params[key] = str(value)
+        return params

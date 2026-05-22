@@ -262,7 +262,9 @@ class CvssV2Model(BaseModel):
             raise ValueError(f"Invalid CVSS version: {v}. Must be '2.0'")
         return v
 
-    model_config = ConfigDict(populate_by_name=True, use_enum_values=True)
+    model_config = ConfigDict(
+        validate_by_name=True, validate_by_alias=True, use_enum_values=True
+    )
 
 
 # Convenience function to create minimal CVSS v2.0 score

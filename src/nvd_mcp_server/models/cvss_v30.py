@@ -399,4 +399,6 @@ class CvssV30Model(BaseModel):
         """
         return v
 
-    model_config = ConfigDict(populate_by_name=True, use_enum_values=True)
+    model_config = ConfigDict(
+        validate_by_name=True, validate_by_alias=True, use_enum_values=True
+    )

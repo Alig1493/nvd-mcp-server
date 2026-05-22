@@ -4,10 +4,11 @@ from fastmcp import FastMCP
 from fastmcp.tools import FunctionTool
 from fastmcp.utilities.logging import get_logger
 
-from .server import search_cves
+from .server import search_cve_history, search_cves
 
 mcp: FastMCP = FastMCP("NVD MCP Server")
 mcp.add_tool(FunctionTool.from_function(search_cves))
+mcp.add_tool(FunctionTool.from_function(search_cve_history))
 
 
 logger = get_logger(__name__)
@@ -43,5 +44,5 @@ def main() -> None:
         logger.info("Exiting.")
         exit(0)
     except Exception as exc:
-        logger.warning(f"Existing due to {exc}")
+        logger.warning(f"Exiting due to {exc}")
         exit(1)

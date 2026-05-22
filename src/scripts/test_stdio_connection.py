@@ -14,6 +14,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from fastmcp.client.client import CallToolResult
 from fastmcp.client.transports import ClientTransport
@@ -24,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from fastmcp import Client
 
 from nvd_mcp_server.cli import mcp
+from nvd_mcp_server.models.cve_history import EventName, NvdCveHistoryRequest
 from nvd_mcp_server.models.cve_request import (
     CVERequest,
     CveTag,
@@ -39,6 +41,13 @@ class TestCase:
     name: str
     request: CVERequest
     expect_results: bool = True  # False when the filter may legitimately match nothing
+
+
+@dataclass
+class HistoryTestCase:
+    name: str
+    request: NvdCveHistoryRequest
+    expect_results: bool = True
 
 
 TEST_CASES: list[TestCase] = [
@@ -239,6 +248,29 @@ TEST_CASES: list[TestCase] = [
 ]
 
 
+HISTORY_TEST_CASES: list[HistoryTestCase] = [
+    # ── Single CVE history ───────────────────────────────────────────────────
+    HistoryTestCase(
+        "History – Log4Shell (CVE-2021-44228)",
+        NvdCveHistoryRequest(cve_id="CVE-2021-44228", results_per_page=5),
+    ),
+    # ── Event name filters ───────────────────────────────────────────────────
+    HistoryTestCase(
+        "History – Initial Analysis events",
+        NvdCveHistoryRequest(event_name=EventName.INITIAL_ANALYSIS, results_per_page=5),
+    ),
+    # ── Date range ───────────────────────────────────────────────────────────
+    HistoryTestCase(
+        "History – changes in Jan 2024",
+        NvdCveHistoryRequest(
+            change_start_date="2024-01-01T00:00:00.000",
+            end_date="2024-01-31T23:59:59.000",
+            results_per_page=5,
+        ),
+    ),
+]
+
+
 async def run_test(
     client: Client[ClientTransport], tc: TestCase, sem: asyncio.Semaphore
 ) -> tuple[str, bool, str, float]:
@@ -300,35 +332,91 @@ async def _run_test(
         return tc.name, False, f"{type(exc).__name__}: {exc}", time.monotonic() - t0
 
 
-async def main() -> None:
-    total = len(TEST_CASES)
-    passed = 0
-    failed = 0
-    failed_names: list[str] = []
+async def run_history_test(
+    client: Client[ClientTransport], tc: HistoryTestCase, sem: asyncio.Semaphore
+) -> tuple[str, bool, str, float]:
+    async with sem:
+        t0 = time.monotonic()
+        try:
+            result = await client.call_tool(
+                "search_cve_history",
+                {"request": tc.request.model_dump(by_alias=False, exclude_none=True)},
+            )
+            elapsed = time.monotonic() - t0
 
-    print("NVD CVE API — end-to-end test run")
-    print(f"{'=' * 62}")
-    print(f"{total} test cases  |  running in parallel")
-    print(f"{'=' * 62}\n")
+            if result.is_error:
+                return tc.name, False, _get_error_content(result), elapsed
+
+            text_content = _get_text_content(result)
+            if not text_content:
+                return tc.name, False, "Invalid content returned", elapsed
+
+            data = json.loads(text_content)
+            total = data["total_results"]
+            returned = len(data["changes"])
+            first_id = data["changes"][0]["cve_id"] if returned > 0 else "—"
+
+            if tc.expect_results and total == 0:
+                return tc.name, False, "Expected results but got 0", elapsed
+
+            detail = f"{total:,} total · {returned} returned · first={first_id}"
+            return tc.name, True, detail, elapsed
+
+        except Exception as exc:
+            return tc.name, False, f"{type(exc).__name__}: {exc}", time.monotonic() - t0
+
+
+async def _run_suite(
+    label: str,
+    coros: list[Any],
+    total: int,
+) -> tuple[int, int, list[str]]:
+    passed = failed = 0
+    failed_names: list[str] = []
+    completed = 0
+
+    print(f"\n{label}")
+    print(f"{'─' * 62}")
+
+    for coro in asyncio.as_completed(coros):
+        name, ok, detail, elapsed = await coro
+        completed += 1
+        status = "PASS" if ok else "FAIL"
+        print(f"[{completed:02}/{total}] {status}  {name}  ({elapsed:.2f}s)")
+        if not ok:
+            print(f"         ERROR: {detail}")
+        if ok:
+            passed += 1
+        else:
+            failed += 1
+            failed_names.append(name)
+
+    return passed, failed, failed_names
+
+
+async def main() -> None:
     sem = asyncio.Semaphore(10)
 
+    print("NVD MCP Server — end-to-end test run")
+    print(f"{'=' * 62}")
+
     async with Client(mcp) as client:
-        coros = [run_test(client, tc, sem) for tc in TEST_CASES]
-        completed = 0
+        cve_coros = [run_test(client, tc, sem) for tc in TEST_CASES]
+        history_coros = [run_history_test(client, tc, sem) for tc in HISTORY_TEST_CASES]
 
-        for coro in asyncio.as_completed(coros):
-            name, ok, detail, elapsed = await coro
-            completed += 1
-            status = "PASS" if ok else "FAIL"
-            print(f"[{completed:02}/{total}] {status}  {name}  ({elapsed:.2f}s)")
-            if not ok:
-                print(f"         ERROR: {detail}")
+        p1, f1, fn1 = await _run_suite(
+            f"search_cves  ({len(TEST_CASES)} tests)", cve_coros, len(TEST_CASES)
+        )
+        p2, f2, fn2 = await _run_suite(
+            f"search_cve_history  ({len(HISTORY_TEST_CASES)} tests)",
+            history_coros,
+            len(HISTORY_TEST_CASES),
+        )
 
-            if ok:
-                passed += 1
-            else:
-                failed += 1
-                failed_names.append(name)
+    total = len(TEST_CASES) + len(HISTORY_TEST_CASES)
+    passed = p1 + p2
+    failed = f1 + f2
+    failed_names = fn1 + fn2
 
     print(f"\n{'=' * 62}")
     print(f"Results: {passed} passed, {failed} failed out of {total} tests")

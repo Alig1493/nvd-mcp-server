@@ -437,7 +437,8 @@ class CvssV31Model(BaseModel):
         return validate_vector_string(v, VectorStringType.V31)
 
     model_config = ConfigDict(
-        populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
         str_strip_whitespace=True,
         validate_assignment=True,
     )
