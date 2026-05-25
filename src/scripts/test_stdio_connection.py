@@ -252,20 +252,25 @@ HISTORY_TEST_CASES: list[HistoryTestCase] = [
     # ── Single CVE history ───────────────────────────────────────────────────
     HistoryTestCase(
         "History – Log4Shell (CVE-2021-44228)",
-        NvdCveHistoryRequest(cve_id="CVE-2021-44228", results_per_page=5),
+        NvdCveHistoryRequest(cve_id="CVE-2021-44228", results_per_page=2),
     ),
-    # ── Event name filters ───────────────────────────────────────────────────
+    # ── Event name filters (date-constrained to avoid full-table scan) ───────
     HistoryTestCase(
-        "History – Initial Analysis events",
-        NvdCveHistoryRequest(event_name=EventName.INITIAL_ANALYSIS, results_per_page=5),
+        "History – Initial Analysis events (Jan 2024)",
+        NvdCveHistoryRequest(
+            event_name=EventName.INITIAL_ANALYSIS,
+            change_start_date="2024-01-01T00:00:00.000",
+            end_date="2024-01-07T23:59:59.000",
+            results_per_page=2,
+        ),
     ),
     # ── Date range ───────────────────────────────────────────────────────────
     HistoryTestCase(
         "History – changes in Jan 2024",
         NvdCveHistoryRequest(
             change_start_date="2024-01-01T00:00:00.000",
-            end_date="2024-01-31T23:59:59.000",
-            results_per_page=5,
+            end_date="2024-01-07T23:59:59.000",
+            results_per_page=2,
         ),
     ),
 ]

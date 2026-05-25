@@ -214,11 +214,10 @@ class NvdCveHistoryRequest(BaseModelExtrForbid):
         default=None,
         alias="eventName",
         description="""
-            This parameter returns all CVE associated with a specific type of
-            change event. Please note, each request can contain only one value
-            for the eventName parameter. Empty spaces in the URL should be encoded
-            in the request as "%20".
-            The user agent may handle this encoding automatically.
+            Filter by a specific type of change event. Must always be combined
+            with changeStartDate and changeEndDate (keep the window to 7 days or
+            less) — querying by event_name alone without a date range scans the
+            entire history database and will time out.
         """,
         examples=[
             "https://services.nvd.nist.gov/rest/json/cvehistory/2.0"
@@ -228,15 +227,15 @@ class NvdCveHistoryRequest(BaseModelExtrForbid):
         ],
     )
     results_per_page: int | None = Field(
-        default=10,
+        default=5,
         alias="resultsPerPage",
         description="""
-            This parameter specifies the maximum number of change events
-            to be returned in a single API response. For network considerations,
-            the default value and maximum allowable limit is 5,000.
+            Maximum number of change events to return. Keep this at 2–5 —
+            the history API is slow and larger pages increase response time
+            significantly. The absolute maximum is 5,000.
         """,
         examples=[
-            "https://services.nvd.nist.gov/rest/json/cvehistory/2.0/?resultsPerPage=20&startIndex=0"
+            "https://services.nvd.nist.gov/rest/json/cvehistory/2.0/?resultsPerPage=5&startIndex=0"
         ],
     )
     start_index: int | None = Field(
