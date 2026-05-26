@@ -58,6 +58,17 @@ async def search_cves(request: CVERequest) -> str:
     each containing: id, published date, status, English description, CVSS score,
     CWE weaknesses, top 5 references, and CISA KEV data if applicable.
 
+    When to use this tool:
+      - You want to find CVEs that match criteria such as keyword, CPE, severity,
+        publication date, or CVSS score.
+      - You need the current state of a CVE record (description, score, status).
+
+    When NOT to use this tool:
+      - You want to see how a CVE record changed over time (e.g. score updates,
+        status transitions, new references added) — use search_cve_history instead.
+      - You want to audit what happened to a specific CVE on a given date — use
+        search_cve_history with cve_id and a date range instead.
+
     Performance guidance:
       - Keep results_per_page at 5–10 to avoid slow responses.
       - When filtering by date, limit the window to 30 days or less.
@@ -88,6 +99,18 @@ async def search_cve_history(request: NvdCveHistoryRequest) -> str:
 
     Returns a JSON string with pagination info and a list of change events,
     each containing the CVE ID, event type, source, timestamp, and change details.
+
+    When to use this tool:
+      - You want to see how a CVE record changed over time (e.g. score updates,
+        status transitions, analyst comments, new references added).
+      - You want to audit activity on a specific CVE — use cve_id for the fastest query.
+      - You want to find all CVEs that were modified within a date range.
+
+    When NOT to use this tool:
+      - You want to find CVEs matching criteria like keyword, CPE, or severity —
+        use search_cves instead.
+      - You need the current description, score, or status of a CVE — use
+        search_cves instead, which returns the current NVD record.
 
     Performance guidance — the history API is significantly slower than the CVE API:
       - Always set results_per_page to 2–5.
