@@ -1,18 +1,37 @@
 import asyncio
+import functools
 import logging
 from contextlib import asynccontextmanager
 from time import time
-from typing import Any, AsyncGenerator, Callable
+from typing import Any, AsyncGenerator, Callable, Coroutine, TypeVar
 
 import aiohttp
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
 
 
 class RequestFailedError(Exception):
     """Raised when a request fails after all retries are exhausted."""
 
     pass
+
+
+def guard_tool_errors(
+    func: Callable[..., Coroutine[Any, Any, _T]],
+) -> Callable[..., Coroutine[Any, Any, _T]]:
+    @functools.wraps(func)
+    async def wrapper(*args: Any, **kwargs: Any) -> _T:
+        try:
+            return await func(*args, **kwargs)
+        except RuntimeError:
+            raise
+        except Exception:
+            logger.exception("Unexpected error in %s", func.__name__)
+            raise RuntimeError("An unexpected error occurred. Check server logs.")
+
+    return wrapper
 
 
 @asynccontextmanager

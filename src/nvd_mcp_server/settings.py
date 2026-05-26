@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     total_timeout: float = Field(
         default=60.0, description="Per-request HTTP timeout in seconds."
     )
-    nvd_api_key: str = Field(
+    nvd_api_key: SecretStr = Field(
         description="API key for National Vulnerability Database access"
     )
     nvd_cve_url: str = Field(

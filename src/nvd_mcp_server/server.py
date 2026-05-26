@@ -13,7 +13,7 @@ from .models.core import NvdVulnerabilityData
 from .models.cve_request import CVERequest
 from .models.cve_summary import CveHistorySearchResult, CveSearchResult
 from .settings import Settings
-from .utils import RequestFailedError, retry
+from .utils import RequestFailedError, guard_tool_errors, retry
 
 _settings = Settings()
 
@@ -34,8 +34,10 @@ async def _fetch_data(url: str, query_params: dict[str, str]) -> Any:
                 )
             if response.status != 200:
                 error_body = await response.text()
+                # truncate error body to 100 ot avoid spamming llm
+                # during exceptions.
                 raise RuntimeError(
-                    f"NVD API returned HTTP {response.status}: {error_body}"
+                    f"NVD API returned HTTP {response.status}: {error_body[:100]}"
                 )
             return await response.json()  # type: ignore[no-any-return]
 
@@ -49,6 +51,7 @@ async def _fetch_data(url: str, query_params: dict[str, str]) -> Any:
         )
 
 
+@guard_tool_errors
 async def search_cves(request: CVERequest) -> str:
     """
     Search the National Vulnerability Database (NVD) for CVEs
@@ -84,15 +87,14 @@ async def search_cves(request: CVERequest) -> str:
     """
     query_params = request.to_query_params()
     data = await _fetch_data(_settings.nvd_cve_url, query_params)
-
     try:
         raw = NvdVulnerabilityData.model_validate(data)
     except ValidationError as exc:
         raise RuntimeError(f"NVD API response failed validation: {exc}") from exc
-
     return CveSearchResult.from_response(raw).model_dump_json()
 
 
+@guard_tool_errors
 async def search_cve_history(request: NvdCveHistoryRequest) -> str:
     """
     Search the NVD CVE Change History API for changes made to CVE records.
@@ -125,12 +127,10 @@ async def search_cve_history(request: NvdCveHistoryRequest) -> str:
         _settings.nvd_cve_history_url,
         request.model_dump(by_alias=True, exclude_none=True, mode="json"),
     )
-
     try:
         raw = NvdCveHistoryResponse.model_validate(data)
     except ValidationError as exc:
         raise RuntimeError(
             f"NVD API history response failed validation: {exc}"
         ) from exc
-
     return CveHistorySearchResult.from_response(raw).model_dump_json()

@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, Optional
 
 import aiohttp
+from pydantic import SecretStr
 
 from nvd_mcp_server.settings import Settings
 
@@ -13,11 +14,11 @@ class RequestHandler:
         self,
         settings: Settings,
         query_params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.session: Optional[aiohttp.ClientSession] = None
         self.query_params = query_params or {}
-        self.headers = headers or {}
+        self.headers: Dict[str, Any] = headers or {}
         self.timeout = aiohttp.ClientTimeout(total=settings.total_timeout)
 
     async def __aenter__(self) -> "RequestHandler":
@@ -42,11 +43,16 @@ class RequestHandler:
         logger.debug(f"Query params: {self.query_params}")
         logger.debug(f"Headers: {self.headers}")
 
+        resolved_headers = {
+            k: v.get_secret_value() if isinstance(v, SecretStr) else v
+            for k, v in self.headers.items()
+        }
+
         try:
             return await self.session.get(
                 url,
                 params=self.query_params,
-                headers=self.headers,
+                headers=resolved_headers,
                 allow_redirects=False,
             )
         except aiohttp.ClientError as e:
