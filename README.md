@@ -4,8 +4,6 @@
 
 [![nvd-mcp-server MCP server](https://glama.ai/mcp/servers/Alig1493/nvd-mcp-server/badges/card.svg)](https://glama.ai/mcp/servers/Alig1493/nvd-mcp-server)
 
-[![nvd-mcp-server MCP server](https://glama.ai/mcp/servers/Alig1493/nvd-mcp-server/badges/score.svg)](https://glama.ai/mcp/servers/Alig1493/nvd-mcp-server)
-
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that lets AI assistants like Claude, Cursor, and Gemini search the [National Vulnerability Database (NVD)](https://nvd.nist.gov/) for security vulnerabilities and their change history — in plain English, no API knowledge required.
 
 Ask your AI assistant things like:
